@@ -1,0 +1,28 @@
+/kronos-project
+|
+├── /backend
+|   ├── /instance
+|   |   └── sessions.db
+|   ├── /static
+|   |   └── styles.css
+|   ├── /templates
+|   |   ├── index.html
+|   |   ├── login.html
+|   |   └── register.html
+|   ├── app.py
+|   └── requirements.txt
+|
+├── /frontend
+|   ├── /public
+|   |   ├── index.html
+|   |   └── manifest.json
+|   ├── /src
+|   |   ├── /assets
+|   |   |   └── kronos-logo.png
+|   |   ├── App.css
+|   |   ├── App.js
+|   |   └── index.js
+|   ├── package.json
+|   └── README.md
+|
+└── README.md

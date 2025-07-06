@@ -1,0 +1,12 @@
+# Python
+venv/
+*.pyc
+__pycache__/
+instance/
+*.db
+*.db-journal
+
+# Node
+node_modules/
+build/
+.DS_Store

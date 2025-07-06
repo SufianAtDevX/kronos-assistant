@@ -1,0 +1,296 @@
+/* --- CSS Variables and Global Styles --- */
+:root {
+  --background-dark: #0d1117;
+  --background-light: #161b22;
+  --primary-accent: #58a6ff;
+  --primary-accent-hover: #79c0ff;
+  --glow-color: rgba(88, 166, 255, 0.5);
+  --border-color: #30363d;
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  --card-border-radius: 12px;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  background-color: var(--background-dark);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Main App Container --- */
+.App {
+  text-align: center;
+}
+
+/* --- Navigation Bar --- */
+.App-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 5%;
+  background: rgba(13, 17, 23, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-logo {
+  height: 40px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.nav-links a {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: var(--primary-accent);
+}
+
+.login-btn {
+  font-family: var(--font-main);
+  background: none;
+  border: 1px solid var(--primary-accent);
+  color: var(--primary-accent);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.login-btn:hover {
+  background-color: var(--primary-accent);
+  color: var(--background-dark);
+}
+
+/* --- Hero Section --- */
+.hero-section {
+  padding: 6rem 1rem;
+}
+
+.hero-section h1 {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.hero-section p {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.cta-btn {
+  font-family: var(--font-main);
+  background: var(--primary-accent);
+  color: var(--background-dark);
+  border: none;
+  padding: 1rem 2.5rem;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.cta-btn:hover {
+  background: var(--primary-accent-hover);
+  transform: translateY(-2px);
+}
+
+/* --- Pricing Section --- */
+.pricing-section {
+  padding: 5rem 1rem;
+  background-color: var(--background-light);
+}
+
+.pricing-section h2 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 4rem;
+  font-size: 1.1rem;
+}
+
+.pricing-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.pricing-card {
+  background: var(--background-dark);
+  border: 1px solid var(--border-color);
+  border-radius: var(--card-border-radius);
+  padding: 2.5rem;
+  width: 320px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pricing-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+.pricing-card.featured {
+  border-color: var(--primary-accent);
+}
+
+/* --- Glowing Card Effect --- */
+.card-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at 50% 0%,
+    var(--glow-color),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.pricing-card:hover .card-glow {
+  opacity: 0.3;
+}
+
+.pricing-card.featured .card-glow {
+  opacity: 0.5;
+}
+
+.popular-badge {
+  position: absolute;
+  top: 1.5rem;
+  right: -50px;
+  transform: rotate(45deg);
+  background-color: var(--primary-accent);
+  color: var(--background-dark);
+  padding: 0.3rem 3rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.pricing-card h3 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.price {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.price span {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.features-list {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.features-list li {
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.features-list li.excluded {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+
+.select-plan-btn {
+  font-family: var(--font-main);
+  background: none;
+  border: 1px solid var(--primary-accent);
+  color: var(--primary-accent);
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.select-plan-btn:hover {
+  background-color: var(--primary-accent);
+  color: var(--background-dark);
+}
+
+.select-plan-btn.featured-btn {
+  background-color: var(--primary-accent);
+  color: var(--background-dark);
+}
+
+.select-plan-btn.featured-btn:hover {
+  background-color: var(--primary-accent-hover);
+}
+
+/* --- Footer --- */
+.App-footer {
+  padding: 2rem;
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 1024px) {
+  .hero-section h1 {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    display: none; /* Simple hiding for mobile, could be a hamburger menu */
+  }
+
+  .hero-section {
+    padding: 4rem 1rem;
+  }
+  
+  .hero-section h1 {
+    font-size: 2.5rem;
+  }
+
+  .hero-section p {
+    font-size: 1rem;
+  }
+  
+  .pricing-container {
+    flex-direction: column;
+    align-items: center;
+  }
+}
