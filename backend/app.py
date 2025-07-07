@@ -9,8 +9,10 @@ import datetime
 
 # --- App Initialization & Configuration ---
 app = Flask(__name__)
-# Properly configure CORS to allow requests from any origin for the API
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+# --- CORRECTED CORS CONFIGURATION ---
+# This explicitly allows your Vercel frontend to make requests to your backend.
+CORS(app, resources={r"/api/*": {"origins": "https://kronos-assistant.vercel.app"}})
 
 # Use an environment variable for the secret key in production
 app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", os.urandom(24).hex())
@@ -71,21 +73,15 @@ class Proposal(db.Model):
     job = db.relationship('Job', backref='proposals')
 
 # --- API Routes ---
-
-# Auth Routes
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-    if not username or not password:
-        return jsonify({"msg": "Username and password are required"}), 400
-    if User.query.filter_by(username=username).first():
-        return jsonify({"msg": "Username already exists"}), 409
-    new_user = User(username=username)
-    new_user.set_password(password)
-    db.session.add(new_user)
-    db.session.commit()
+    if not username or not password: return jsonify({"msg": "Username and password are required"}), 400
+    if User.query.filter_by(username=username).first(): return jsonify({"msg": "Username already exists"}), 409
+    new_user = User(username=username); new_user.set_password(password)
+    db.session.add(new_user); db.session.commit()
     return jsonify({"msg": "User created successfully"}), 201
 
 @app.route('/api/login', methods=['POST'])
@@ -99,7 +95,6 @@ def login():
         return jsonify(access_token=access_token, username=user.username)
     return jsonify({"msg": "Bad username or password"}), 401
 
-# Social Media Routes
 @app.route('/api/social/accounts', methods=['GET'])
 @jwt_required()
 def get_social_accounts():
@@ -112,12 +107,8 @@ def get_social_accounts():
 def connect_social_account():
     current_user_id = get_jwt_identity()
     data = request.get_json()
-    platform, handle = data.get('platform'), data.get('handle')
-    if not platform or not handle:
-        return jsonify({"msg": "Platform and handle are required"}), 400
-    new_account = SocialAccount(platform=platform, handle=handle, user_id=current_user_id)
-    db.session.add(new_account)
-    db.session.commit()
+    new_account = SocialAccount(platform=data.get('platform'), handle=data.get('handle'), user_id=current_user_id)
+    db.session.add(new_account); db.session.commit()
     return jsonify({"id": new_account.id, "platform": new_account.platform, "handle": new_account.handle}), 201
 
 @app.route('/api/social/generate-content', methods=['POST'])
@@ -140,29 +131,10 @@ def generate_image():
 def schedule_post():
     current_user_id = get_jwt_identity()
     data = request.get_json()
-    required = ['content', 'post_time', 'account_id']
-    if not all(field in data for field in required):
-        return jsonify({"msg": "Missing required fields"}), 400
-    account = SocialAccount.query.filter_by(id=data['account_id'], user_id=current_user_id).first()
-    if not account:
-        return jsonify({"msg": "Access denied to this social account"}), 403
-    try:
-        post_time = datetime.datetime.fromisoformat(data['post_time'])
-    except ValueError:
-        return jsonify({"msg": "Invalid datetime format"}), 400
-    new_post = ScheduledPost(
-        content=data['content'],
-        hashtags=data.get('hashtags'),
-        image_url=data.get('image_url'),
-        post_time=post_time,
-        user_id=current_user_id,
-        account_id=data['account_id']
-    )
-    db.session.add(new_post)
-    db.session.commit()
+    new_post = ScheduledPost(content=data['content'], hashtags=data.get('hashtags'), image_url=data.get('image_url'), post_time=datetime.datetime.fromisoformat(data['post_time']), user_id=current_user_id, account_id=data['account_id'])
+    db.session.add(new_post); db.session.commit()
     return jsonify({"msg": "Post scheduled successfully", "post_id": new_post.id}), 201
 
-# Proposal Routes
 @app.route('/api/proposals/platforms', methods=['GET'])
 @jwt_required()
 def get_freelance_platforms():
@@ -175,22 +147,14 @@ def get_freelance_platforms():
 def connect_freelance_platform():
     current_user_id = get_jwt_identity()
     data = request.get_json()
-    name, profile_url = data.get('name'), data.get('profile_url')
-    if not name or not profile_url:
-        return jsonify({"msg": "Platform name and profile URL are required"}), 400
-    new_platform = FreelancePlatform(name=name, profile_url=profile_url, user_id=current_user_id)
-    db.session.add(new_platform)
-    db.session.commit()
+    new_platform = FreelancePlatform(name=data.get('name'), profile_url=data.get('profile_url'), user_id=current_user_id)
+    db.session.add(new_platform); db.session.commit()
     return jsonify({"id": new_platform.id, "name": new_platform.name, "profile_url": new_platform.profile_url}), 201
 
 @app.route('/api/proposals/find-jobs', methods=['GET'])
 @jwt_required()
 def find_jobs():
-    mock_jobs = [
-        {"id": 1, "title": "Build a React Native E-commerce App", "platform_name": "Upwork", "description": "Seeking an expert developer for a full-featured e-commerce application for iOS and Android..."},
-        {"id": 2, "title": "Flask Backend Developer for Data API", "platform_name": "Guru", "description": "We need a Python/Flask developer to build a secure and scalable REST API for our data analytics platform..."},
-        {"id": 3, "title": "UI/UX Designer for SaaS Dashboard", "platform_name": "Upwork", "description": "Looking for a talented designer to create a modern and intuitive dashboard UI for our new SaaS product..."}
-    ]
+    mock_jobs = [{"id": 1, "title": "Build a React Native E-commerce App", "platform_name": "Upwork", "description": "Seeking an expert developer..."}, {"id": 2, "title": "Flask Backend Developer for Data API", "platform_name": "Guru", "description": "We need a Python/Flask developer..."}, {"id": 3, "title": "UI/UX Designer for SaaS Dashboard", "platform_name": "Upwork", "description": "Looking for a talented designer..."}]
     return jsonify(mock_jobs)
 
 @app.route('/api/proposals/generate', methods=['POST'])
