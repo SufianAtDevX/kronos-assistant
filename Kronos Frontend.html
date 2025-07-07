@@ -48,7 +48,7 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
-        const API_URL = "http://SufianAtDevX.pythonanywhere.com";
+        const API_URL = "https://SufianAtDevX.pythonanywhere.com"; // <-- UPDATED WITH YOUR USERNAME
 
         // --- API Helper ---
         const apiFetch = async (endpoint, options = {}) => {
@@ -130,7 +130,7 @@
                 </div>
             );
         };
-
+        
         // --- Page Components ---
         const AuthComponent = ({ setToken, setUsername, setActiveTab }) => {
             const [isLogin, setIsLogin] = useState(true);
