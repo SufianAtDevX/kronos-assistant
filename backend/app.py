@@ -10,13 +10,14 @@ import datetime
 # --- App Initialization & Configuration ---
 app = Flask(__name__)
 
-# --- CORRECTED CORS CONFIGURATION ---
 # This explicitly allows your Vercel frontend to make requests to your backend.
 CORS(app, resources={r"/api/*": {"origins": "https://kronos-assistant.vercel.app"}})
 
 # Use an environment variable for the secret key in production
-app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", os.urandom(24).hex())
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", 'sqlite:///kronos.db')
+app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "a-super-secret-key-that-you-should-change")
+# Use an absolute path for the database on PythonAnywhere
+db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'kronos.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", f'sqlite:///{db_path}')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 jwt = JWTManager(app)
 db = SQLAlchemy(app)
@@ -72,29 +73,35 @@ class Proposal(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     job = db.relationship('Job', backref='proposals')
 
+# Create tables within the app context
+with app.app_context():
+    db.create_all()
+
 # --- API Routes ---
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    if not username or not password: return jsonify({"msg": "Username and password are required"}), 400
-    if User.query.filter_by(username=username).first(): return jsonify({"msg": "Username already exists"}), 409
-    new_user = User(username=username); new_user.set_password(password)
-    db.session.add(new_user); db.session.commit()
+    if not data or not data.get('username') or not data.get('password'):
+        return jsonify({"msg": "Username and password are required"}), 400
+    if User.query.filter_by(username=data['username']).first():
+        return jsonify({"msg": "Username already exists"}), 409
+    new_user = User(username=data['username'])
+    new_user.set_password(data['password'])
+    db.session.add(new_user)
+    db.session.commit()
     return jsonify({"msg": "User created successfully"}), 201
 
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    user = User.query.filter_by(username=username).first()
-    if user and user.check_password(password):
+    if not data or not data.get('username') or not data.get('password'):
+        return jsonify({"msg": "Bad username or password"}), 401
+    user = User.query.filter_by(username=data['username']).first()
+    if user and user.check_password(data['password']):
         access_token = create_access_token(identity=user.id)
         return jsonify(access_token=access_token, username=user.username)
     return jsonify({"msg": "Bad username or password"}), 401
-
+    
 @app.route('/api/social/accounts', methods=['GET'])
 @jwt_required()
 def get_social_accounts():
@@ -108,14 +115,15 @@ def connect_social_account():
     current_user_id = get_jwt_identity()
     data = request.get_json()
     new_account = SocialAccount(platform=data.get('platform'), handle=data.get('handle'), user_id=current_user_id)
-    db.session.add(new_account); db.session.commit()
+    db.session.add(new_account)
+    db.session.commit()
     return jsonify({"id": new_account.id, "platform": new_account.platform, "handle": new_account.handle}), 201
 
 @app.route('/api/social/generate-content', methods=['POST'])
 @jwt_required()
 def generate_content():
     topic = request.json.get('topic', 'an exciting new venture')
-    mock_caption = f"Excited to announce our latest project focusing on {topic}. We're pushing the boundaries of innovation and can't wait to share more. #Innovation #{topic.replace(' ', '')} #FutureTech"
+    mock_caption = f"Excited to announce our latest project focusing on {topic}. We're pushing the boundaries of innovation. #Innovation #{topic.replace(' ', '')} #FutureTech"
     mock_hashtags = f"#business #{topic.replace(' ', '')} #startup"
     return jsonify({"caption": mock_caption, "hashtags": mock_hashtags, "image_prompt": f"A futuristic, abstract image representing '{topic}'"})
 
@@ -132,7 +140,8 @@ def schedule_post():
     current_user_id = get_jwt_identity()
     data = request.get_json()
     new_post = ScheduledPost(content=data['content'], hashtags=data.get('hashtags'), image_url=data.get('image_url'), post_time=datetime.datetime.fromisoformat(data['post_time']), user_id=current_user_id, account_id=data['account_id'])
-    db.session.add(new_post); db.session.commit()
+    db.session.add(new_post)
+    db.session.commit()
     return jsonify({"msg": "Post scheduled successfully", "post_id": new_post.id}), 201
 
 @app.route('/api/proposals/platforms', methods=['GET'])
@@ -148,7 +157,8 @@ def connect_freelance_platform():
     current_user_id = get_jwt_identity()
     data = request.get_json()
     new_platform = FreelancePlatform(name=data.get('name'), profile_url=data.get('profile_url'), user_id=current_user_id)
-    db.session.add(new_platform); db.session.commit()
+    db.session.add(new_platform)
+    db.session.commit()
     return jsonify({"id": new_platform.id, "name": new_platform.name, "profile_url": new_platform.profile_url}), 201
 
 @app.route('/api/proposals/find-jobs', methods=['GET'])
@@ -162,12 +172,9 @@ def find_jobs():
 def generate_proposal():
     user = User.query.get(get_jwt_identity())
     job_title = request.json.get('job_title', 'the specified project')
-    mock_proposal = (f"Dear Hiring Manager,\n\nI am writing to express my keen interest in the '{job_title}' position. With a proven track record in developing high-quality, scalable applications, I am confident I possess the skills and experience necessary to deliver exceptional results for your project.\n\nMy portfolio demonstrates my expertise in modern web technologies and my commitment to writing clean, efficient, and well-documented code. I am a proactive communicator and am dedicated to ensuring project goals are met on time and within budget.\n\nI am eager to discuss how my skills can benefit your team. Thank you for your time and consideration.\n\nSincerely,\n{user.username}")
+    mock_proposal = (f"Dear Hiring Manager,\n\nI am writing to express my keen interest in the '{job_title}' position. With a proven track record in developing high-quality, scalable applications, I am confident I possess the skills and experience necessary to deliver exceptional results for your project.\n\nSincerely,\n{user.username}")
     return jsonify({"proposal_text": mock_proposal})
 
-# --- Main Execution ---
+# This block is essential for running the app on your local machine
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True, port=5001)
-
