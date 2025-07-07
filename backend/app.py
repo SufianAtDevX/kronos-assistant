@@ -73,7 +73,7 @@ class Proposal(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     job = db.relationship('Job', backref='proposals')
 
-# Create tables within the app context to ensure they exist before first request
+# Create tables within the app context
 with app.app_context():
     db.create_all()
 
