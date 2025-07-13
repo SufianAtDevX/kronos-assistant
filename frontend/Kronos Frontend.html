@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kronos - Final Interface</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700&family=Oswald:wght@400;500;600;700&family=Saira:wght@400;600&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { background-color: #000; font-family: 'Saira', sans-serif; }
+        @keyframes float { 0% { transform: translate(0, 0); } 50% { transform: translate(0, 15px); } 100% { transform: translate(0, 0); } }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 0.6; } 100% { opacity: 0.4; } }
+        @keyframes sway { 0% { transform: translateY(-10px) rotateX(10deg) rotateY(-5deg); } 100% { transform: translateY(10px) rotateX(-10deg) rotateY(5deg); } }
+        .animated-element { position: absolute; background: rgba(0, 200, 255, 0.2); border-radius: 50%; animation: float 15s ease-in-out infinite alternate, pulse 8s ease-in-out infinite alternate; filter: blur(3px); z-index: -1; }
+        .animated-element:nth-child(1) { width: 35px; height: 35px; top: 10%; left: 15%; }
+        .animated-element:nth-child(2) { width: 45px; height: 45px; top: 80%; left: 25%; animation-delay: -2s; }
+        .animated-element:nth-child(3) { width: 30px; height: 30px; top: 30%; right: 10%; animation-delay: -4s; }
+        .animated-element:nth-child(4) { width: 55px; height: 55px; bottom: 5%; right: 30%; animation-delay: -6s; }
+        .floating-logo { position: absolute; top: 50%; left: 50%; width: 250px; height: 250px; margin-left: -125px; margin-top: -125px; opacity: 0.08; animation: sway 20s ease-in-out infinite alternate; filter: drop-shadow(0 0 15px rgba(0, 200, 255, 0.5)); z-index: 0; }
+        .cards-container { font-family: "League Spartan", system-ui, sans-serif; color: #ddd; width: 100%; }
+        .cards-heading { font-weight: 600; font-size: 2.5em; margin-bottom: 1em; text-align: center; color: #eceff1; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-family: 'Oswald', sans-serif; }
+        .cards-subtitle { font-size: 1.2em; color: #a0a0a0; text-align: center; margin-top: -0.5em; margin-bottom: 2em; font-family: 'Saira', sans-serif; }
+        .cards { position: relative; }
+        .cards__inner { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2.5em; }
+        .card { --flow-space: 1em; --hsl: var(--hue), 82%, 51%; padding: 1.5em 2em; display: grid; grid-template-rows: auto auto 1fr auto; align-items: start; gap: 1.25em; color: #eceff1; background-color: rgba(43, 43, 43, 0.5); border: 1px solid #eceff133; border-radius: 15px; transition: 400ms background ease; will-change: background; position: relative; }
+        .card:hover { background: hsla(var(--hsl), 0.1); }
+        .card__heading { font-size: 1.5em; font-weight: 600; font-family: 'Oswald', sans-serif; color: hsl(var(--hsl)); }
+        .card__price { font-size: 2em; font-weight: 700; }
+        .card__bullets { line-height: 1.4; list-style: none; padding: 0; }
+        .card__bullets li::before { display: inline-block; content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='16' title='check' fill='%23dddddd'%3E%3Cpath d='M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z' /%3E%3C/svg%3E"); transform: translateY(0.25ch); margin-right: 1ch; }
+        .cta { display: block; align-self: end; margin: 1em 0 0.5em 0; text-align: center; text-decoration: none; color: #fff; background-color: #0d0d0d; padding: 0.7em; border-radius: 10px; font-size: 1rem; font-weight: 600; }
+        .overlay { position: absolute; inset: 0; pointer-events: none; user-select: none; opacity: var(--opacity, 0); -webkit-mask: radial-gradient(25rem 25rem at var(--x) var(--y), #000 1%, transparent 50%); mask: radial-gradient(25rem 25rem at var(--x) var(--y), #000 1%, transparent 50%); transition: 400ms mask ease; will-change: mask; }
+        .overlay .card { background-color: hsla(var(--hsl), 0.15); border-color: hsla(var(--hsl), 1); box-shadow: 0 0 0 1px inset hsl(var(--hsl)); position: relative; }
+        .overlay .cta { display: block; align-self: end; margin: 1em 0 0.5em 0; padding: 0.7em; border-radius: 10px; width: 100%; background-color: hsl(var(--hsl)); box-shadow: 0 0 0 1px hsl(var(--hsl)); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const API_URL = "https://SufianAtDevX.pythonanywhere.com";
+
+        // --- API Helper ---
+        const apiFetch = async (endpoint, options = {}) => {
+            const token = localStorage.getItem('token');
+            const headers = { 'Content-Type': 'application/json', ...options.headers };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const response = await fetch(API_URL + endpoint, { ...options, headers });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ msg: 'An unknown error occurred.' }));
+                throw new Error(errorData.msg);
+            }
+            return response.json();
+        };
+
+        // --- Reusable Components ---
+        const TabButton = ({ tabName, activeTab, onClick, children }) => ( <button className={`px-6 py-3 rounded-full transition-all duration-300 text-lg font-bold tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75 ${activeTab === tabName ? 'bg-gradient-to-r from-blue-600 to-teal-700 text-white shadow-lg transform scale-105' : 'bg-white bg-opacity-5 text-gray-300 hover:bg-opacity-10 hover:text-white border border-white border-opacity-10 hover:scale-105 hover:shadow-xl'}`} onClick={() => onClick(tabName)} style={{ fontFamily: "'Oswald', sans-serif" }}> {children} </button> );
+        const InfoCard = ({ title, children, className = '' }) => ( <div className={`bg-white bg-opacity-5 border border-white border-opacity-10 rounded-xl p-6 shadow-lg h-full flex flex-col ${className}`}> <h3 className="text-xl font-bold text-blue-300 mb-4" style={{ fontFamily: "'Oswald', sans-serif" }}>{title}</h3> <div className="flex-grow overflow-y-auto">{children}</div> </div> );
+        
+        const CardSection = ({ heading, subtitle, cardData, onCtaClick }) => {
+            const cardsContainerRef = useRef(null);
+            const overlayRef = useRef(null);
+            const cardsRef = useRef([]);
+
+            useEffect(() => {
+                const cardsContainer = cardsContainerRef.current;
+                const overlay = overlayRef.current;
+                const cards = cardsRef.current.filter(c => c);
+                if (!cardsContainer || !overlay || cards.length === 0) return;
+
+                const applyOverlayMask = (e) => {
+                    const rect = cardsContainer.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    overlay.style.setProperty('--opacity', '1');
+                    overlay.style.setProperty('--x', `${x}px`);
+                    overlay.style.setProperty('--y', `${y}px`);
+                };
+                
+                const handlePointerLeave = () => overlay.style.setProperty('--opacity', '0');
+                cardsContainer.addEventListener('pointermove', applyOverlayMask);
+                cardsContainer.addEventListener('pointerleave', handlePointerLeave);
+
+                return () => {
+                    if (cardsContainer) {
+                        cardsContainer.removeEventListener('pointermove', applyOverlayMask);
+                        cardsContainer.removeEventListener('pointerleave', handlePointerLeave);
+                    }
+                };
+            }, [cardData]);
+
+            return (
+                <div className="cards-container">
+                    <h2 className="cards-heading">{heading}</h2>
+                    {subtitle && <p className="cards-subtitle">{subtitle}</p>}
+                    <div className="main__cards cards" ref={cardsContainerRef}>
+                        <div className="cards__inner">
+                            {cardData.map((card, index) => (
+                                <div className="cards__card card" key={index} style={{ '--hue': card.hue }} ref={el => cardsRef.current[index] = el}>
+                                    <h3 className="card__heading">{card.heading}</h3>
+                                    {card.price && <p className="card__price">{card.price}</p>}
+                                    {card.description && <p className="text-gray-300">{card.description}</p>}
+                                    {card.bullets && <ul role="list" className="card__bullets">{card.bullets.map((bullet, i) => <li key={i}>{bullet}</li>)}</ul>}
+                                    <a href="#" onClick={(e) => { e.preventDefault(); onCtaClick && onCtaClick(card.ctaAction); }} className="card__cta cta">{card.cta}</a>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="overlay cards__inner" ref={overlayRef}>
+                             {cardData.map((card, index) => (
+                                <div className="cards__card card" key={index} style={{ '--hue': card.hue }}>
+                                    <h3 className="card__heading">{card.heading}</h3>
+                                    {card.price && <p className="card__price">{card.price}</p>}
+                                    {card.description && <p className="text-gray-300">{card.description}</p>}
+                                    {card.bullets && <ul role="list" className="card__bullets">{card.bullets.map((bullet, i) => <li key={i}>{bullet}</li>)}</ul>}
+                                    <a href="#" onClick={(e) => { e.preventDefault(); onCtaClick && onCtaClick(card.ctaAction); }} className="card__cta cta">{card.cta}</a>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
+        // --- Page Components ---
+        const AuthComponent = ({ setToken, setUsername, setActiveTab }) => {
+            const [isLogin, setIsLogin] = useState(true);
+            const [message, setMessage] = useState('');
+            const [usernameInput, setUsernameInput] = useState('');
+            const [passwordInput, setPasswordInput] = useState('');
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setMessage('');
+                const endpoint = isLogin ? '/api/login' : '/api/register';
+                try {
+                    const data = await apiFetch(endpoint, { method: 'POST', body: JSON.stringify({ username: usernameInput, password: passwordInput }) });
+                    if (isLogin) {
+                        localStorage.setItem('token', data.access_token);
+                        localStorage.setItem('username', data.username);
+                        setToken(data.access_token);
+                        setUsername(data.username);
+                        setActiveTab('dashboard');
+                    } else {
+                        setMessage('Registration successful! Please log in.');
+                        setIsLogin(true);
+                    }
+                } catch (error) { setMessage(error.message); }
+            };
+
+            return ( <div className="flex justify-center items-center h-full py-10"> <div className="bg-white bg-opacity-10 rounded-xl p-8 shadow-lg text-center max-w-md w-full border border-white border-opacity-20"> <h2 className="text-3xl font-bold mb-6 text-white" style={{ fontFamily: "'Oswald', sans-serif" }}>{isLogin ? 'Login to Kronos' : 'Register for Kronos'}</h2> <form onSubmit={handleSubmit} className="space-y-4"> <div><input type="text" placeholder="Username" value={usernameInput} onChange={e => setUsernameInput(e.target.value)} className="w-full p-3 rounded-md bg-white bg-opacity-5 border border-white border-opacity-10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" /></div> <div><input type="password" placeholder="Password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full p-3 rounded-md bg-white bg-opacity-5 border border-white border-opacity-10 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500" /></div> <button type="submit" className="w-full py-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-bold transition-colors duration-300">{isLogin ? 'Login' : 'Register'}</button> {message && <p className="text-sm mt-2" style={{ color: message.includes('successful') ? '#4CAF50' : '#F44336' }}>{message}</p>} </form> <p className="mt-4 text-gray-400"> {isLogin ? "Don't have an account? " : "Already have an account? "} <a href="#" onClick={(e) => { e.preventDefault(); setIsLogin(!isLogin); setMessage(''); }} className="text-blue-400 hover:underline">{isLogin ? 'Register here' : 'Login here'}</a> </p> </div> </div> );
+        };
+
+        const SocialMediaTab = () => {
+            const [accounts, setAccounts] = useState([]);
+            const [newPlatform, setNewPlatform] = useState('Facebook');
+            const [newHandle, setNewHandle] = useState('');
+            const [topic, setTopic] = useState('');
+            const [generatedContent, setGeneratedContent] = useState(null);
+            const [generatedImageUrl, setGeneratedImageUrl] = useState('');
+            const [isImageLoading, setIsImageLoading] = useState(false);
+            const [scheduleTime, setScheduleTime] = useState('');
+            const [selectedAccount, setSelectedAccount] = useState('');
+            const [message, setMessage] = useState('');
+
+            useEffect(() => {
+                apiFetch('/api/social/accounts').then(data => {
+                    setAccounts(data);
+                    if (data.length > 0) setSelectedAccount(data[0].id);
+                }).catch(error => setMessage(`Error fetching accounts: ${error.message}`));
+            }, []);
+
+            const handleConnect = async (e) => { e.preventDefault(); try { const newAccount = await apiFetch('/api/social/connect', { method: 'POST', body: JSON.stringify({ platform: newPlatform, handle: newHandle }) }); setAccounts([...accounts, newAccount]); setNewHandle(''); setMessage('Account connected successfully!'); } catch (error) { setMessage(`Connection failed: ${error.message}`); } };
+            
+            const handleGenerateText = async (e) => {
+                e.preventDefault();
+                setGeneratedImageUrl('');
+                try {
+                    const content = await apiFetch('/api/social/generate-content', { method: 'POST', body: JSON.stringify({ topic }) });
+                    setGeneratedContent(content);
+                    setMessage('Text content generated!');
+                } catch (error) { setMessage(`Text generation failed: ${error.message}`); }
+            };
+
+            const handleGenerateImage = async () => {
+                if (!generatedContent || !generatedContent.image_prompt) {
+                    setMessage('Please generate text content first to get an image prompt.');
+                    return;
+                }
+                setIsImageLoading(true);
+                setMessage('Generating promotional image...');
+                try {
+                    const data = await apiFetch('/api/social/generate-image', { method: 'POST', body: JSON.stringify({ prompt: generatedContent.image_prompt }) });
+                    setGeneratedImageUrl(data.image_url);
+                    setMessage('Image generated successfully!');
+                } catch (error) {
+                    setMessage(`Image generation failed: ${error.message}`);
+                } finally {
+                    setIsImageLoading(false);
+                }
+            };
+
+            const handleSchedule = async (e) => {
+                e.preventDefault();
+                if (!generatedContent || !selectedAccount || !scheduleTime) {
+                    setMessage('Please generate content, select an account, and pick a time.');
+                    return;
+                }
+                try {
+                    await apiFetch('/api/social/schedule', { method: 'POST', body: JSON.stringify({ content: generatedContent.caption, hashtags: generatedContent.hashtags, image_url: generatedImageUrl, post_time: new Date(scheduleTime).toISOString(), account_id: selectedAccount }) });
+                    setMessage('Post scheduled successfully!');
+                    setGeneratedContent(null);
+                    setGeneratedImageUrl('');
+                    setTopic('');
+                } catch (error) { setMessage(`Scheduling failed: ${error.message}`); }
+            };
+
+            return ( <div> <h2 className="text-3xl font-bold text-center mb-8" style={{fontFamily: "'Oswald', sans-serif"}}>Social Media Matrix</h2> {message && <p className="text-center mb-4 p-2 rounded-md bg-gray-700">{message}</p>} <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"> <InfoCard title="1. Connect Accounts"> <ul className="space-y-2 mb-4 flex-grow"> {accounts.map(acc => <li key={acc.id} className="p-2 bg-gray-800 rounded">{acc.platform}: @{acc.handle}</li>)} {accounts.length === 0 && <li className="text-gray-400">No accounts connected.</li>} </ul> <form onSubmit={handleConnect} className="space-y-3 mt-auto"> <select value={newPlatform} onChange={e => setNewPlatform(e.target.value)} className="w-full p-2 rounded-md bg-gray-700 text-white border-gray-600"><option>Facebook</option><option>Instagram</option><option>LinkedIn</option><option>Twitter</option></select> <input type="text" placeholder="@handle" value={newHandle} onChange={e => setNewHandle(e.target.value)} className="w-full p-2 rounded-md bg-gray-700 text-white border-gray-600" /> <button type="submit" className="w-full py-2 rounded-md bg-blue-600 hover:bg-blue-700 font-bold">Connect</button> </form> </InfoCard> <InfoCard title="2. Generate Content" className="lg:col-span-2"> <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> <div> <form onSubmit={handleGenerateText} className="space-y-3"> <textarea placeholder="Enter a topic for your post..." value={topic} onChange={e => setTopic(e.target.value)} className="w-full p-2 rounded-md bg-gray-700 text-white border-gray-600 h-24" /> <button type="submit" className="w-full py-2 rounded-md bg-purple-600 hover:bg-purple-700 font-bold">Generate Text</button> </form> {generatedContent && ( <div className="mt-4 space-y-2 p-3 bg-gray-800 rounded"> <p><strong>Caption:</strong> {generatedContent.caption}</p> <p><strong>Hashtags:</strong> {generatedContent.hashtags}</p> <p className="text-sm text-cyan-400"><strong>Image Prompt:</strong> "{generatedContent.image_prompt}"</p> <button onClick={handleGenerateImage} disabled={isImageLoading} className="w-full mt-2 py-2 rounded-md bg-pink-600 hover:bg-pink-700 font-bold disabled:bg-gray-500"> {isImageLoading ? 'Generating...' : 'Generate Promotional Image'} </button> </div> )} </div> <div> <h4 className="font-bold text-lg mb-2 text-center">Image Preview</h4> <div className="w-full aspect-square bg-gray-800 rounded-lg flex items-center justify-center"> {isImageLoading ? (<p>Loading...</p>) : generatedImageUrl ? (<img src={generatedImageUrl} alt="Generated promotional image" className="object-cover w-full h-full rounded-lg" />) : (<p className="text-gray-500">Image will appear here</p>)} </div> </div> </div> </InfoCard> <InfoCard title="3. Review & Schedule" className="lg:col-span-3"> <form onSubmit={handleSchedule} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end"> <div className="md:col-span-2"> <label className="block text-sm font-bold mb-1">Schedule for Account</label> <select value={selectedAccount} onChange={e => setSelectedAccount(e.target.value)} className="w-full p-2 rounded-md bg-gray-700 text-white border-gray-600" disabled={accounts.length === 0}> {accounts.length > 0 ? accounts.map(acc => <option key={acc.id} value={acc.id}>{acc.platform} - @{acc.handle}</option>) : <option>Connect an account first</option>} </select> </div> <div> <label className="block text-sm font-bold mb-1">Date and Time</label> <input type="datetime-local" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-full p-2 rounded-md bg-gray-700 text-white border-gray-600" /> </div> <button type="submit" className="md:col-span-3 w-full py-3 mt-2 rounded-md bg-teal-600 hover:bg-teal-700 font-bold text-lg" disabled={!generatedContent}>Schedule Post</button> </form> </InfoCard> </div> </div> );
+        };
+        
+        const ProposalsTab = () => {
+             const [platforms, setPlatforms] = useState([]);
+            const [newPlatformName, setNewPlatformName] = useState('Upwork');
+            const [newProfileUrl, setNewProfileUrl] = useState('');
+            const [jobs, setJobs] = useState([]);
+            const [generatedProposal, setGeneratedProposal] = useState('');
+            const [message, setMessage] = useState('');
+
+            useEffect(() => {
+                const fetchData = async () => {
+                    try {
+                        const [platformsData, jobsData] = await Promise.all([ apiFetch('/api/proposals/platforms'), apiFetch('/api/proposals/find-jobs') ]);
+                        setPlatforms(platformsData);
+                        setJobs(jobsData);
+                    } catch (error) { setMessage(`Error fetching data: ${error.message}`); }
+                };
+                fetchData();
+            }, []);
+
+            const handleConnectPlatform = async (e) => { e.preventDefault(); try { const newPlatform = await apiFetch('/api/proposals/connect-platform', { method: 'POST', body: JSON.stringify({ name: newPlatformName, profile_url: newProfileUrl }) }); setPlatforms([...platforms, newPlatform]); setNewProfileUrl(''); setMessage('Platform connected successfully!'); } catch (error) { setMessage(`Connection failed: ${error.message}`); } };
+            const handleGenerateProposal = async (jobTitle) => { try { const data = await apiFetch('/api/proposals/generate', { method: 'POST', body: JSON.stringify({ job_title: jobTitle }) }); setGeneratedProposal(data.proposal_text); setMessage('Proposal generated!'); } catch (error) { setMessage(`Proposal generation failed: ${error.message}`); } };
+
+            return ( <div> <h2 className="cards-heading">Proposals Protocol</h2> {message && <p className="text-center mb-4 p-2 rounded-md bg-gray-700">{message}</p>} <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"> <InfoCard title="1. Connect Platforms"> <ul className="space-y-2 mb-4 flex-grow"> {platforms.map(p => <li key={p.id} className="p-2 bg-gray-800 rounded"><a href={p.profile_url} target="_blank" className="hover:underline">{p.name} Profile</a></li>)} {platforms.length === 0 && <li className="text-gray-400">No platforms connected.</li>} </ul> <form onSubmit={handleConnectPlatform} className="space-y-3 mt-auto"> <select value={newPlatformName} onChange={e => setNewPlatformName(e.target.value)} className="w-full p-2 rounded-md bg-gray-700 text-white border-gray-600"><option>Fiverr</option><option>Guru</option><option>Upwork</option></select> <input type="url" placeholder="https://platform.com/profile" value={newProfileUrl} onChange={e => setNewProfileUrl(e.target.value)} className="w-full p-2 rounded-md bg-gray-700 text-white border-gray-600" /> <button type="submit" className="w-full py-2 rounded-md bg-blue-600 hover:bg-blue-700 font-bold">Connect</button> </form> </InfoCard> <InfoCard title="2. Find & Match Jobs"> <div className="space-y-4"> {jobs.map(job => ( <div key={job.id} className="p-3 bg-gray-800 rounded"> <h4 className="font-bold">{job.title} <span className="text-xs bg-green-600 px-2 py-1 rounded-full">{job.platform_name}</span></h4> <p className="text-sm text-gray-400 mt-1">{job.description}</p> <button onClick={() => handleGenerateProposal(job.title)} className="w-full mt-2 py-1 rounded-md bg-purple-600 hover:bg-purple-700 text-sm font-bold">Generate Proposal</button> </div> ))} </div> </InfoCard> <InfoCard title="3. Generated Proposal" className="lg:col-span-1"> <textarea readOnly value={generatedProposal} className="w-full h-full p-2 rounded-md bg-gray-800 text-gray-300 border-gray-600 whitespace-pre-wrap" placeholder="Your AI-generated proposal will appear here..."></textarea> </InfoCard> </div> </div> );
+        };
+        
+        const PricingTab = ({ onCtaClick }) => {
+            const pricingData = [ { heading: 'Basic', price: 'Free', bullets: ['Manual Content Generation', 'Manual Proposal Generation', '3 Social Profiles', 'Email Support'], cta: 'Get Started', hue: 165 }, { heading: 'Pro', price: '$49/mo', bullets: ['Everything in Basic', 'Automated Post Scheduling', 'AI-Powered Job Matching', 'Priority Email Support'], cta: 'Upgrade to Pro', hue: 291 }, { heading: 'Ultimate', price: '$99/mo', bullets: ['Everything in Pro', 'Autonomous Cloud Operation', 'Context-Aware AI Generation', '24/7 Priority Support'], cta: 'Go Ultimate', hue: 338 }, ];
+            return <CardSection heading="Unlock Your Potential" cardData={pricingData} onCtaClick={onCtaClick} />;
+        };
+
+        const DashboardTab = ({ onCtaClick }) => {
+            const dashboardData = [ { heading: 'Digital Presence Orchestration', description: 'Automate content creation, scheduling, and posting across all your social media platforms.', cta: 'Engage Social Media', hue: 210, ctaAction: 'social-media' }, { heading: 'Strategic Proposal Deployment', description: 'Find matching jobs on freelance platforms and generate tailored proposals with AI.', cta: 'Initiate Proposals', hue: 165, ctaAction: 'proposals' }, ];
+            return <CardSection heading="Dashboard" subtitle={`Unleash the ultimate power of Kronos AI to revolutionize your digital operations.`} cardData={dashboardData} onCtaClick={onCtaClick} />;
+        };
+
+
+        // --- Main App Component ---
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [token, setToken] = useState(localStorage.getItem('token'));
+            const [username, setUsername] = useState(localStorage.getItem('username'));
+
+            const handleLogout = () => { localStorage.removeItem('token'); localStorage.removeItem('username'); setToken(null); setUsername(null); setActiveTab('dashboard'); };
+            const handleCtaClick = (action) => { if (action) setActiveTab(action); };
+
+            const renderContent = () => {
+                if (!token && (activeTab === 'social-media' || activeTab === 'proposals')) {
+                    return <div className="text-center py-20"><h2 className="text-2xl font-bold mb-4">Please log in to access this feature.</h2><button onClick={() => setActiveTab('login')} className="px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-indigo-700 text-white text-lg font-bold">Login</button></div>;
+                }
+                switch (activeTab) {
+                    case 'dashboard': return <DashboardTab onCtaClick={handleCtaClick} />;
+                    case 'social-media': return <SocialMediaTab />;
+                    case 'proposals': return <ProposalsTab />;
+                    case 'pricing': return <PricingTab onCtaClick={handleCtaClick} />;
+                    case 'login': return <AuthComponent setToken={setToken} setUsername={setUsername} setActiveTab={setActiveTab} />;
+                    default: return <DashboardTab onCtaClick={handleCtaClick} />;
+                }
+            };
+            
+            return (
+                <div className="min-h-screen bg-black font-sans p-4 flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 z-0 opacity-10" style={{ backgroundImage: `linear-gradient(to right, rgba(0, 100, 255, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 100, 255, 0.1) 1px, transparent 1px)`, backgroundSize: '40px 40px' }}></div>
+                    <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(circle at center, rgba(0, 100, 255, 0.05) 0%, transparent 70%)' }}></div>
+                    {[...Array(6)].map((_, i) => <div key={i} className="animated-element"></div>)}
+                    <div className="floating-logo"><img src="http://devxhouse.com/download/kronos-logo.png" alt="Kronos Background Logo" /></div>
+
+                    <div className="bg-white bg-opacity-5 backdrop-filter backdrop-blur-3xl rounded-3xl shadow-2xl p-6 sm:p-10 w-full max-w-7xl border border-white border-opacity-10 text-gray-100 z-10" style={{ boxShadow: '0 0 50px rgba(0, 100, 255, 0.3), 0 0 100px rgba(0, 100, 255, 0.1), inset 0 0 20px rgba(255, 255, 255, 0.05)' }}>
+                        <header className="flex flex-col md:flex-row items-center justify-between mb-12 pb-6 border-b border-white border-opacity-10">
+                            <div className="flex flex-col items-center md:items-start">
+                                <h1 className="text-5xl font-extrabold text-white flex flex-col items-center md:items-start mb-4" style={{ fontFamily: "'Oswald', sans-serif", lineHeight: '0.8', textShadow: '2px 2px 4px rgba(0,0,0,0.5), 4px 4px 6px rgba(0,0,0,0.3)' }}>
+                                    <span className="text-blue-400">KR</span><span className="text-blue-400">ON</span><span className="text-blue-400">OS</span>
+                                    <span className="text-gray-400 text-sm mt-2" style={{ fontFamily: "'Saira', sans-serif", textShadow: 'none' }}>DevX AI</span>
+                                </h1>
+                                <nav className="flex flex-wrap justify-center gap-4">
+                                    <TabButton tabName="dashboard" activeTab={activeTab} onClick={setActiveTab}>Dashboard</TabButton>
+                                    <TabButton tabName="social-media" activeTab={activeTab} onClick={setActiveTab}>Social Media</TabButton>
+                                    <TabButton tabName="proposals" activeTab={activeTab} onClick={setActiveTab}>Proposals</TabButton>
+                                    <TabButton tabName="pricing" activeTab={activeTab} onClick={setActiveTab}>Pricing</TabButton>
+                                </nav>
+                            </div>
+                            {token ? (
+                                <div className="flex items-center gap-4 mt-4 md:mt-0">
+                                    <span className="text-lg text-gray-300">Welcome, {username}!</span>
+                                    <button onClick={handleLogout} className="px-6 py-3 rounded-full bg-gradient-to-r from-red-600 to-pink-700 text-white text-lg font-bold tracking-wider shadow-lg transform transition-transform duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75" style={{ fontFamily: "'Oswald', sans-serif" }}>Logout</button>
+                                </div>
+                            ) : (
+                                <button onClick={() => setActiveTab('login')} className="mt-4 md:mt-0 px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-indigo-700 text-white text-lg font-bold tracking-wider shadow-lg transform transition-transform duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-75" style={{ fontFamily: "'Oswald', sans-serif" }}>Login</button>
+                            )}
+                        </header>
+
+                        <main className="min-h-[500px]">
+                           {renderContent()}
+                        </main>
+                    </div>
+                </div>
+            );
+        };
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
