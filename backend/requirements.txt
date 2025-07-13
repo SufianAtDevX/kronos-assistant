@@ -1,6 +1,6 @@
-gunicorn
 Flask
-flask-cors
-flask-sqlalchemy
-flask-jwt-extended
-werkzeug
+Flask-Cors
+Flask-JWT-Extended
+Flask-SQLAlchemy
+python-dotenv
+Werkzeug

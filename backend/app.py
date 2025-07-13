@@ -1,343 +1,188 @@
-# backend/app.py
-
 import os
-import datetime
+from datetime import datetime, timedelta
+
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_jwt_extended import (
-    JWTManager,
-    create_access_token,
-    get_jwt_identity,
-    jwt_required
+    JWTManager, create_access_token,
+    jwt_required, get_jwt_identity
 )
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
 
-# --- App Initialization ---
+# Load .env
+load_dotenv()
+
 app = Flask(__name__)
-
-# --- Configuration ---
-app.config["JWT_SECRET_KEY"] = os.environ.get(
-    "JWT_SECRET_KEY",
-    "a-super-secret-key-that-you-should-change"
-)
-db_file = os.path.join(os.path.dirname(__file__), "kronos.db")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-    "DATABASE_URL",
-    f"sqlite:///{db_file}"
-)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///kronos.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key")
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=1)
 
-# --- CORS Setup ---
-CORS(
-    app,
-    resources={r"/api/*": {"origins": os.environ.get(
-        "FRONTEND_URL",
-        "https://kronos-assistant.vercel.app"
-    )}},
-    supports_credentials=True,
-    allow_headers=["Content-Type", "Authorization"],
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-)
-
-# --- Extensions ---
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
+CORS(app, resources={r"/api/*": {"origins": os.getenv("FRONTEND_URL", "*")}})
 
-# --- JWT Error Handlers ---
-@jwt.unauthorized_loader
-def handle_missing_token(err_msg):
-    return jsonify({"error": "Missing Authorization Header"}), 401
-
-@jwt.invalid_token_loader
-def handle_invalid_token(err_msg):
-    return jsonify({"error": "Invalid Token"}), 422
-
-@jwt.expired_token_loader
-def handle_expired_token(header, payload):
-    return jsonify({"error": "Token has expired"}), 401
-
-# --- Database Models ---
+# --- Models ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-
-    social_accounts     = db.relationship(
-        "SocialAccount", backref="user", cascade="all, delete-orphan"
-    )
-    scheduled_posts     = db.relationship(
-        "ScheduledPost", backref="user", cascade="all, delete-orphan"
-    )
-    freelance_platforms = db.relationship(
-        "FreelancePlatform", backref="user", cascade="all, delete-orphan"
-    )
-    proposals           = db.relationship(
-        "Proposal", backref="user", cascade="all, delete-orphan"
-    )
-
-    def set_password(self, raw_password):
-        self.password_hash = generate_password_hash(raw_password)
-
-    def check_password(self, raw_password):
-        return check_password_hash(self.password_hash, raw_password)
-
+    password_hash = db.Column(db.String(128), nullable=False)
+    social_accounts = db.relationship("SocialAccount", backref="user", lazy=True)
+    platforms = db.relationship("ProposalPlatform", backref="user", lazy=True)
+    scheduled_posts = db.relationship("ScheduledPost", backref="user", lazy=True)
 
 class SocialAccount(db.Model):
-    id       = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     platform = db.Column(db.String(50), nullable=False)
-    handle   = db.Column(db.String(100), nullable=False)
-    user_id  = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    handle = db.Column(db.String(80), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
+class ProposalPlatform(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    profile_url = db.Column(db.String(200), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
 class ScheduledPost(db.Model):
-    id          = db.Column(db.Integer, primary_key=True)
-    content     = db.Column(db.Text, nullable=False)
-    hashtags    = db.Column(db.String(500))
-    image_url   = db.Column(db.String(500))
-    post_time   = db.Column(db.DateTime, nullable=False)
-    user_id     = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    account_id  = db.Column(db.Integer, db.ForeignKey("social_account.id"), nullable=False)
-    social_account = db.relationship("SocialAccount", backref="scheduled_posts")
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    hashtags = db.Column(db.String(200), nullable=True)
+    image_url = db.Column(db.String(200), nullable=True)
+    post_time = db.Column(db.DateTime, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    account_id = db.Column(db.Integer, nullable=False)
 
-
-class FreelancePlatform(db.Model):
-    id          = db.Column(db.Integer, primary_key=True)
-    name        = db.Column(db.String(50), nullable=False)
-    profile_url = db.Column(db.String(200), nullable=False)
-    user_id     = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-
-
-class Job(db.Model):
-    id            = db.Column(db.Integer, primary_key=True)
-    title         = db.Column(db.String(200), nullable=False)
-    description   = db.Column(db.Text, nullable=False)
-    platform_name = db.Column(db.String(50), nullable=False)
-
-
-class Proposal(db.Model):
-    id       = db.Column(db.Integer, primary_key=True)
-    content  = db.Column(db.Text, nullable=False)
-    job_id   = db.Column(db.Integer, db.ForeignKey("job.id"), nullable=False)
-    user_id  = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    job      = db.relationship("Job", backref="proposals")
-
-# Create tables if they don't exist
+# Create tables
 with app.app_context():
     db.create_all()
 
-# --- API Routes ---
+# --- Auth Endpoints ---
 @app.route("/api/register", methods=["POST"])
 def register():
     data = request.get_json() or {}
-    username = data.get("username", "").strip()
-    password = data.get("password", "")
-
-    if not username or not password:
+    usern, pwd = data.get("username"), data.get("password")
+    if not usern or not pwd:
         return jsonify({"error": "Username and password required"}), 400
-
-    if User.query.filter_by(username=username).first():
-        return jsonify({"error": "Username already exists"}), 409
-
-    user = User(username=username)
-    user.set_password(password)
+    if User.query.filter_by(username=usern).first():
+        return jsonify({"error": "Username already exists"}), 400
+    user = User(
+        username=usern,
+        password_hash=generate_password_hash(pwd)
+    )
     db.session.add(user)
     db.session.commit()
-
-    return jsonify({"message": "User created successfully"}), 201
-
+    return jsonify({"message": "User created"}), 201
 
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.get_json() or {}
-    username = data.get("username", "").strip()
-    password = data.get("password", "")
+    usern, pwd = data.get("username"), data.get("password")
+    user = User.query.filter_by(username=usern).first()
+    if not user or not check_password_hash(user.password_hash, pwd):
+        return jsonify({"error": "Invalid credentials"}), 401
+    token = create_access_token(identity=user.id)
+    return jsonify({"access_token": token, "username": user.username})
 
-    user = User.query.filter_by(username=username).first()
-    if not user or not user.check_password(password):
-        return jsonify({"error": "Bad username or password"}), 401
-
-    # Cast identity to string so 'sub' field is valid
-    token = create_access_token(identity=str(user.id))
-    return jsonify({
-        "access_token": token,
-        "username": user.username
-    }), 200
-
-
+# --- Social Media Endpoints ---
 @app.route("/api/social/accounts", methods=["GET"])
 @jwt_required()
 def get_social_accounts():
     uid = get_jwt_identity()
     accounts = SocialAccount.query.filter_by(user_id=uid).all()
-    return jsonify([
-        {"id": a.id, "platform": a.platform, "handle": a.handle}
-        for a in accounts
-    ]), 200
-
+    return jsonify([{"id": a.id, "platform": a.platform, "handle": a.handle} for a in accounts])
 
 @app.route("/api/social/connect", methods=["POST"])
 @jwt_required()
 def connect_social_account():
-    uid = get_jwt_identity()
     data = request.get_json() or {}
-    if not data.get("platform") or not data.get("handle"):
+    plat, handle = data.get("platform"), data.get("handle")
+    if not plat or not handle:
         return jsonify({"error": "Platform and handle required"}), 400
-
-    acct = SocialAccount(
-        platform=data["platform"].strip(),
-        handle=data["handle"].strip(),
-        user_id=uid
-    )
-    db.session.add(acct)
+    uid = get_jwt_identity()
+    acc = SocialAccount(platform=plat, handle=handle, user_id=uid)
+    db.session.add(acc)
     db.session.commit()
-
-    return jsonify({
-        "id": acct.id,
-        "platform": acct.platform,
-        "handle": acct.handle
-    }), 201
-
+    return jsonify({"id": acc.id, "platform": plat, "handle": handle}), 201
 
 @app.route("/api/social/generate-content", methods=["POST"])
 @jwt_required()
 def generate_content():
-    topic = (request.json or {}).get("topic", "an exciting new venture")
-    caption = (
-        f"Excited to announce a project on {topic}. "
-        "#Innovation #FutureTech"
-    )
-    hashtags = f"#business #{topic.replace(' ', '')} #startup"
-    return jsonify({
-        "caption": caption,
-        "hashtags": hashtags,
-        "image_prompt": f"Abstract image of '{topic}'"
-    }), 200
-
+    topic = (request.get_json() or {}).get("topic", "")
+    # Dummy AI logic
+    caption = f"🌟 Check out this AI-powered post about {topic}!"
+    hashtags = f"#{topic.replace(' ', '')} #AI"
+    image_prompt = topic
+    return jsonify({"caption": caption, "hashtags": hashtags, "image_prompt": image_prompt})
 
 @app.route("/api/social/generate-image", methods=["POST"])
 @jwt_required()
 def generate_image():
-    prompt = (request.json or {}).get("prompt", "promo image")
-    url = (
-        "https://placehold.co/1080x1080/000000/FFFFFF/png?"
-        f"text={prompt.replace(' ', '+')}"
-    )
-    return jsonify({"image_url": url}), 200
-
+    prompt = (request.get_json() or {}).get("prompt", "")
+    # Dummy placeholder image
+    image_url = "https://placekitten.com/800/400"
+    return jsonify({"image_url": image_url})
 
 @app.route("/api/social/schedule", methods=["POST"])
 @jwt_required()
 def schedule_post():
-    uid = get_jwt_identity()
     data = request.get_json() or {}
-
-    # Basic validation
-    required = ("content", "post_time", "account_id")
-    if not all(key in data for key in required):
-        return jsonify({"error": "Content, post_time and account_id required"}), 400
-
-    try:
-        post_time = datetime.datetime.fromisoformat(data["post_time"])
-    except ValueError:
-        return jsonify({"error": "post_time must be ISO format"}), 400
-
-    post = ScheduledPost(
-        content=data["content"].strip(),
-        hashtags=data.get("hashtags", "").strip(),
-        image_url=data.get("image_url", "").strip(),
-        post_time=post_time,
+    content = data.get("content")
+    post_time = data.get("post_time")
+    account_id = data.get("account_id")
+    if not content or not post_time or not account_id:
+        return jsonify({"error": "Missing fields"}), 400
+    uid = get_jwt_identity()
+    dt = datetime.fromisoformat(post_time.replace("Z", ""))
+    sp = ScheduledPost(
+        content=content,
+        hashtags=data.get("hashtags"),
+        image_url=data.get("image_url"),
+        post_time=dt,
         user_id=uid,
-        account_id=int(data["account_id"])
+        account_id=account_id
     )
-    db.session.add(post)
+    db.session.add(sp)
     db.session.commit()
+    return jsonify({"message": "Post scheduled"}), 201
 
-    return jsonify({
-        "message": "Post scheduled successfully",
-        "post_id": post.id
-    }), 201
-
-
+# --- Proposal Endpoints ---
 @app.route("/api/proposals/platforms", methods=["GET"])
 @jwt_required()
-def get_freelance_platforms():
+def get_proposal_platforms():
     uid = get_jwt_identity()
-    plats = FreelancePlatform.query.filter_by(user_id=uid).all()
-    return jsonify([
-        {"id": p.id, "name": p.name, "profile_url": p.profile_url}
-        for p in plats
-    ]), 200
-
+    plats = ProposalPlatform.query.filter_by(user_id=uid).all()
+    return jsonify([{"id": p.id, "name": p.name, "profile_url": p.profile_url} for p in plats])
 
 @app.route("/api/proposals/connect-platform", methods=["POST"])
 @jwt_required()
-def connect_freelance_platform():
-    uid = get_jwt_identity()
+def connect_proposal_platform():
     data = request.get_json() or {}
-    if not data.get("name") or not data.get("profile_url"):
+    name, url = data.get("name"), data.get("profile_url")
+    if not name or not url:
         return jsonify({"error": "Name and profile_url required"}), 400
-
-    plat = FreelancePlatform(
-        name=data["name"].strip(),
-        profile_url=data["profile_url"].strip(),
-        user_id=uid
-    )
-    db.session.add(plat)
-    db.session.commit()
-
-    return jsonify({
-        "id": plat.id,
-        "name": plat.name,
-        "profile_url": plat.profile_url
-    }), 201
-
+    uid = get_jwt_identity()
+    p = ProposalPlatform(name=name, profile_url=url, user_id=uid)
+    db.session.add(p); db.session.commit()
+    return jsonify({"id": p.id, "name": name, "profile_url": url}), 201
 
 @app.route("/api/proposals/find-jobs", methods=["GET"])
 @jwt_required()
 def find_jobs():
-    # In real use, replace with external API or DB query
-    mock_jobs = [
-        {
-            "id": 1,
-            "title": "Build a React Native E-commerce App",
-            "platform_name": "Upwork",
-            "description": "Seeking an expert developer..."
-        },
-        {
-            "id": 2,
-            "title": "Flask Backend Developer for Data API",
-            "platform_name": "Guru",
-            "description": "We need a Python/Flask developer..."
-        },
-        {
-            "id": 3,
-            "title": "UI/UX Designer for SaaS Dashboard",
-            "platform_name": "Upwork",
-            "description": "Looking for a talented designer..."
-        }
+    # Dummy job data
+    jobs = [
+        {"id": 1, "title": "Build a React Landing Page", "description": "Need a responsive hero section", "platform_name": "Upwork"},
+        {"id": 2, "title": "Social Media Strategy", "description": "Monthly content calendar", "platform_name": "Fiverr"}
     ]
-    return jsonify(mock_jobs), 200
-
+    return jsonify(jobs)
 
 @app.route("/api/proposals/generate", methods=["POST"])
 @jwt_required()
 def generate_proposal():
-    uid = get_jwt_identity()
-    data = request.get_json() or {}
-    job_title = data.get("job_title", "the specified project")
-    user = User.query.get(uid)
+    title = (request.get_json() or {}).get("job_title", "")
+    text = f"Hello! I’d love to help with {title}. Here’s my pitch…"
+    return jsonify({"proposal_text": text})
 
-    proposal_text = (
-        f"Dear Hiring Manager,\n\n"
-        f"I am writing to express my interest in '{job_title}'. "
-        "With extensive experience building scalable apps, "
-        "I’m confident I can deliver outstanding results.\n\n"
-        f"Sincerely,\n{user.username}"
-    )
-    return jsonify({"proposal_text": proposal_text}), 200
-
-
-# --- Entry Point ---
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(host="0.0.0.0", port=5001, debug=True)
