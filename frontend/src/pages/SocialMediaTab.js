@@ -5,89 +5,94 @@ import {
   connectSocialAccount,
   generateContent,
   generateImage,
-  schedulePost
+  schedulePost,
 } from "../api";
 
 export default function SocialMediaTab() {
   const [accounts, setAccounts] = useState([]);
-  const [platform, setPlatform] = useState("Facebook");
+  const [platform, setPlatform] = useState("Facebook");    // <-- closed quote!
   const [handle, setHandle] = useState("");
   const [topic, setTopic] = useState("");
   const [generated, setGenerated] = useState(null);
   const [imgUrl, setImgUrl] = useState("");
-  const [dateTime, setDateTime] = useState("");
-  const [msg, setMsg] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     getSocialAccounts()
-      .then(res => setAccounts(res.data))
-      .catch(() => setMsg("Failed to load accounts"));
+      .then(({ data }) => setAccounts(data))
+      .catch(() => setMessage("Error fetching accounts"));
   }, []);
 
-  const onConnect = async e => {
+  const onConnect = async (e) => {
     e.preventDefault();
     try {
       const { data } = await connectSocialAccount(platform, handle);
-      setAccounts(prev => [...prev, data]);
+      setAccounts((a) => [...a, data]);
       setHandle("");
-      setMsg("Account connected");
+      setMessage("Account connected!");
     } catch {
-      setMsg("Connect failed");
+      setMessage("Connection failed");
     }
   };
 
-  const onGenText = async e => {
+  const onGenerateText = async (e) => {
     e.preventDefault();
     try {
       const { data } = await generateContent(topic);
       setGenerated(data);
-      setMsg("Text generated");
+      setMessage("Content generated!");
     } catch {
-      setMsg("Generation failed");
+      setMessage("Generation failed");
     }
   };
 
-  const onGenImage = async () => {
-    if (!generated?.image_prompt) return setMsg("Generate text first");
+  const onGenerateImage = async () => {
+    if (!generated?.image_prompt) return setMessage("Generate text first");
     try {
       const { data } = await generateImage(generated.image_prompt);
       setImgUrl(data.image_url);
-      setMsg("Image ready");
+      setMessage("Image ready!");
     } catch {
-      setMsg("Image failed");
+      setMessage("Image generation failed");
     }
   };
 
-  const onSchedule = async e => {
+  const onSchedule = async (e) => {
     e.preventDefault();
-    if (!generated) return setMsg("No content to schedule");
+    if (!generated) return setMessage("No content to schedule");
     try {
       await schedulePost({
         content: generated.caption,
         hashtags: generated.hashtags,
         image_url: imgUrl,
-        post_time: new Date(dateTime).toISOString(),
-        account_id: accounts[0]?.id
+        post_time: new Date(scheduleTime).toISOString(),
+        account_id: accounts[0]?.id,
       });
-      setMsg("Post scheduled");
-      setGenerated(null);
-      setImgUrl("");
-      setTopic("");
-      setDateTime("");
+      setMessage("Post scheduled!");
     } catch {
-      setMsg("Schedule failed");
+      setMessage("Scheduling failed");
     }
   };
 
   return (
-    <div className="space-y-8">
-      {msg && <p className="bg-gray-700 p-2 rounded">{msg}</p>}
+    <div className="space-y-8 text-white">
+      {message && <p className="bg-gray-700 p-2 rounded">{message}</p>}
 
       <InfoCard title="1. Connect Accounts">
+        <ul className="space-y-2 mb-4">
+          {accounts.length
+            ? accounts.map((a) => (
+                <li key={a.id}>
+                  {a.platform}: @{a.handle}
+                </li>
+              ))
+            : <li>No accounts connected.</li>}
+        </ul>
         <form onSubmit={onConnect} className="space-y-2">
           <select
             value={platform}
-            onChange={e => setPlatform(e.target.value)}
+            onChange={(e) => setPlatform(e.target.value)}
             className="w-full p-2 bg-gray-800 rounded"
           >
             <option>Facebook</option>
@@ -96,32 +101,22 @@ export default function SocialMediaTab() {
             <option>Twitter</option>
           </select>
           <input
-            type="text"
             value={handle}
-            onChange={e => setHandle(e.target.value)}
-            placeholder="@username"
-            className="w-full p-2 bg-gray-800 rounded text-white"
+            onChange={(e) => setHandle(e.target.value)}
+            placeholder="@handle"
+            className="w-full p-2 bg-gray-800 rounded"
           />
           <button className="w-full py-2 bg-blue-600 rounded">Connect</button>
         </form>
-        <ul className="mt-4 list-disc list-inside">
-          {accounts.length
-            ? accounts.map(a => (
-                <li key={a.id}>
-                  {a.platform}: @{a.handle}
-                </li>
-              ))
-            : <li>No accounts connected.</li>}
-        </ul>
       </InfoCard>
 
       <InfoCard title="2. Generate Content">
-        <form onSubmit={onGenText} className="space-y-2">
+        <form onSubmit={onGenerateText} className="space-y-2">
           <textarea
             value={topic}
-            onChange={e => setTopic(e.target.value)}
-            placeholder="Topic..."
-            className="w-full p-2 bg-gray-800 rounded text-white"
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="Post topic..."
+            className="w-full p-2 bg-gray-800 rounded"
           />
           <button className="w-full py-2 bg-purple-600 rounded">
             Generate Text
@@ -129,25 +124,14 @@ export default function SocialMediaTab() {
         </form>
         {generated && (
           <div className="mt-4 space-y-2">
-            <p>
-              <strong>Caption:</strong> {generated.caption}
-            </p>
-            <p>
-              <strong>Hashtags:</strong> {generated.hashtags}
-            </p>
+            <p><strong>Caption:</strong> {generated.caption}</p>
+            <p><strong>Hashtags:</strong> {generated.hashtags}</p>
             <button
-              onClick={onGenImage}
+              onClick={onGenerateImage}
               className="w-full py-2 bg-pink-600 rounded"
             >
               Generate Image
             </button>
-            {imgUrl && (
-              <img
-                src={imgUrl}
-                alt="Generated"
-                className="w-full mt-4 rounded shadow-lg"
-              />
-            )}
           </div>
         )}
       </InfoCard>
@@ -156,9 +140,9 @@ export default function SocialMediaTab() {
         <form onSubmit={onSchedule} className="space-y-2">
           <input
             type="datetime-local"
-            value={dateTime}
-            onChange={e => setDateTime(e.target.value)}
-            className="w-full p-2 bg-gray-800 rounded text-white"
+            value={scheduleTime}
+            onChange={(e) => setScheduleTime(e.target.value)}
+            className="w-full p-2 bg-gray-800 rounded"
           />
           <button
             disabled={!generated}
@@ -169,5 +153,5 @@ export default function SocialMediaTab() {
         </form>
       </InfoCard>
     </div>
-  );
+);
 }
