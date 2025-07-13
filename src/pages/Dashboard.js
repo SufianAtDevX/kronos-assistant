@@ -1,44 +1,32 @@
-import React, { useEffect, useState, useContext } from "react";
-import { AuthContext } from "../AuthContext";
-import { getSocialAccounts } from "../api";
+import React from "react";
+import InfoCard from "../components/InfoCard";
 
-export default function Dashboard() {
-  const { user, doLogout } = useContext(AuthContext);
-  const [accounts, setAccounts] = useState([]);
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await getSocialAccounts();
-        setAccounts(res.data);
-      } catch {
-        doLogout();
-      }
-    }
-    load();
-  }, [doLogout]);
-
+export default function Dashboard({ onCtaClick }) {
   return (
-    <div className="p-4 text-white">
-      <h1 className="text-2xl mb-4">Welcome, {user}!</h1>
-      <button
-        onClick={doLogout}
-        className="mb-4 px-4 py-2 bg-red-600 rounded"
-      >
-        Logout
-      </button>
-      <h2 className="text-xl mb-2">Your Social Accounts</h2>
-      {accounts.length === 0 ? (
-        <p>No accounts yet.</p>
-      ) : (
-        <ul className="list-disc pl-6">
-          {accounts.map((a) => (
-            <li key={a.id}>
-              {a.platform}: {a.handle}
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="grid md:grid-cols-2 gap-6">
+      <InfoCard title="Digital Presence Orchestration">
+        <p className="mb-4 text-gray-300">
+          Automate content creation, scheduling, and posting across all your social media platforms.
+        </p>
+        <button
+          onClick={() => onCtaClick("social-media")}
+          className="px-4 py-2 bg-blue-600 rounded text-white"
+        >
+          Engage Social Media
+        </button>
+      </InfoCard>
+
+      <InfoCard title="Strategic Proposal Deployment">
+        <p className="mb-4 text-gray-300">
+          Find matching jobs on freelance platforms and generate tailored proposals with AI.
+        </p>
+        <button
+          onClick={() => onCtaClick("proposals")}
+          className="px-4 py-2 bg-green-600 rounded text-white"
+        >
+          Initiate Proposals
+        </button>
+      </InfoCard>
     </div>
   );
 }

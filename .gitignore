@@ -1,61 +1,39 @@
-HEAD
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+---
 
-# testing
-/coverage
+```gitignore
+# .gitignore
 
-# production
-/build
+# Node modules
+/node_modules/
+/frontend/node_modules/
 
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# React build output
+/frontend/build/
+/dist/
 
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Python virtualenv
+/venv/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# production
-/build
-
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-=======
-# Python
-venv/
+# Python cache & databases
 *.pyc
 __pycache__/
 instance/
 *.db
 *.db-journal
 
-# Node
-node_modules/
-build/
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pip-log.txt
+
+# macOS
 .DS_Store
-10dcb7006173533c032235ef79bfb647254d4896
