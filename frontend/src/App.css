@@ -1,38 +1,128 @@
+/* --------------------------------------------------------
+   Global App Container
+-------------------------------------------------------- */
 .App {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #0a0a0a;
+  color: #eceff1;
+  font-family: "League Spartan", system-ui, sans-serif;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
+/* --------------------------------------------------------
+   Header & Branding
+-------------------------------------------------------- */
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+  background: #111;
+  padding: 1rem 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.App-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+/* --------------------------------------------------------
+   Navigation Tabs
+-------------------------------------------------------- */
+.tabs {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  margin: 1.5rem 0;
 }
 
-.App-link {
-  color: #61dafb;
+.tab {
+  cursor: pointer;
+  padding: 0.75rem 1.5rem;
+  margin: 0 0.5rem;
+  background: #222;
+  color: #ccc;
+  border-radius: 0.5rem;
+  transition: background 0.3s ease, color 0.3s ease;
+  user-select: none;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.tab:hover {
+  background: #2a2a2a;
+}
+
+.tab.active {
+  background: #323232;
+  color: #fff;
+}
+
+/* --------------------------------------------------------
+   Main Content Wrapper
+-------------------------------------------------------- */
+.content {
+  flex: 1;
+  padding: 2rem 1.5rem;
+}
+
+/* --------------------------------------------------------
+   Footer (if any)
+-------------------------------------------------------- */
+.App-footer {
+  background: #111;
+  padding: 1rem 0;
+  font-size: 0.875rem;
+  color: #777;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* --------------------------------------------------------
+   Utility Classes
+-------------------------------------------------------- */
+.hidden {
+  display: none !important;
+}
+
+.visible {
+  display: block !important;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* --------------------------------------------------------
+   Responsive Adjustments
+-------------------------------------------------------- */
+@media (max-width: 640px) {
+  .tabs {
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
-  to {
-    transform: rotate(360deg);
+
+  .tab {
+    flex: 1 1 auto;
+    margin: 0.25rem;
   }
+}
+/*  Global: ensure cards are positioned correctly */
+.card {
+  position: relative;
+  overflow: hidden;
+}
+
+/*  Dynamic Mouse-Glow Overlay */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;                        /* top:0; right:0; bottom:0; left:0 */
+  background: radial-gradient(
+    circle at var(--mx,50%) var(--my,50%),
+    hsla(var(--hue,200),82%,51%,0.25),
+    transparent 40%
+  );
+  opacity: var(--mo,0);
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  z-index: 1;
 }

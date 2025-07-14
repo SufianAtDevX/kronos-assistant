@@ -1,87 +1,77 @@
 import React, { useEffect, useRef } from "react";
 
-export default function CardSection({ heading, subtitle, cardData = [], onCtaClick }) {
-  const containerRef = useRef();
-  const overlayRef = useRef();
+export default function CardSection({
+  heading,
+  subtitle,
+  cardData = [],
+  onCtaClick,
+}) {
+  // holds one ref per card
   const cardsRef = useRef([]);
 
   useEffect(() => {
-    const container = containerRef.current;
-    const overlay = overlayRef.current;
+    // filter out any nulls (in case you re-render)
     const cards = cardsRef.current.filter(Boolean);
 
-    if (!container || !overlay || cards.length === 0) return;
+    // for each card, wire up pointermove + pointerleave
+    cards.forEach((card) => {
+      const onMove = (e) => {
+        const r = card.getBoundingClientRect();
+        // cursor coords inside this card
+        const x = e.clientX - r.left;
+        const y = e.clientY - r.top;
+        card.style.setProperty("--mx", `${x}px`);
+        card.style.setProperty("--my", `${y}px`);
+        card.style.setProperty("--mo", "1");
+      };
+      const onLeave = () => {
+        card.style.setProperty("--mo", "0");
+      };
 
-    cards.forEach((card, i) => {
-      const ovCard = document.createElement("div");
-      ovCard.className = "card";
-      ovCard.style.setProperty("--hue", card.style.getPropertyValue("--hue"));
-      const cta = document.createElement("div");
-      cta.className = "cta";
-      cta.textContent = card.querySelector(".cta")?.textContent || "Learn More";
-      cta.setAttribute("aria-hidden", "true");
-      ovCard.appendChild(cta);
-      overlay.appendChild(ovCard);
+      card.addEventListener("pointermove", onMove);
+      card.addEventListener("pointerleave", onLeave);
+
+      // cleanup
+      return () => {
+        card.removeEventListener("pointermove", onMove);
+        card.removeEventListener("pointerleave", onLeave);
+      };
     });
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      entries.forEach((entry) => {
-        const i = cards.indexOf(entry.target);
-        overlay.children[i].style.width = `${entry.contentRect.width}px`;
-        overlay.children[i].style.height = `${entry.contentRect.height}px`;
-      });
-    });
-    cards.forEach(card => resizeObserver.observe(card));
-
-    const applyMask = (e) => {
-      const rect = container.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      container.style.setProperty("--x", `${x}px`);
-      container.style.setProperty("--y", `${y}px`);
-      container.style.setProperty("--opacity", "1");
-    };
-    const clearMask = () => container.style.setProperty("--opacity", "0");
-
-    container.addEventListener("pointermove", applyMask);
-    container.addEventListener("pointerleave", clearMask);
-
-    return () => {
-      resizeObserver.disconnect();
-      container.removeEventListener("pointermove", applyMask);
-      container.removeEventListener("pointerleave", clearMask);
-    };
-  }, []);
+  }, [cardData]);
 
   return (
     <main className="main flow">
       <h1 className="main__heading">{heading}</h1>
-      {subtitle && <p className="text-center text-gray-400 mb-6">{subtitle}</p>}
+      {subtitle && (
+        <div className="text-center mb-6 text-gray-400">{subtitle}</div>
+      )}
 
-      <div className="cards" ref={containerRef}>
-        <div className="cards__inner">
-          {cardData.map((card, i) => (
-            <div
-              key={i}
-              className="card"
-              ref={(el) => (cardsRef.current[i] = el)}
-              style={{ "--hue": card.hue }}
+      <div className="cards__inner">
+        {cardData.map((c, i) => (
+          <div
+            key={i}
+            ref={(el) => (cardsRef.current[i] = el)}
+            className="card"
+            style={{ "--hue": c.hue }}
+          >
+            <h3 className="card__heading">{c.heading}</h3>
+            {c.price && <p className="card__price">{c.price}</p>}
+            {c.description && <div className="card__desc">{c.description}</div>}
+            {c.bullets && (
+              <ul className="card__bullets flow">
+                {c.bullets.map((b, j) => (
+                  <li key={j}>{b}</li>
+                ))}
+              </ul>
+            )}
+            <button
+              className="cta"
+              onClick={() => onCtaClick?.(c.ctaAction)}
             >
-              <h3 className="card__heading">{card.heading}</h3>
-              {card.price && <p className="card__price">{card.price}</p>}
-              {card.description && <p className="text-gray-300">{card.description}</p>}
-              {card.bullets && (
-                <ul className="card__bullets flow">
-                  {card.bullets.map((b, j) => <li key={j}>{b}</li>)}
-                </ul>
-              )}
-              <button className="cta" onClick={() => onCtaClick?.(card.ctaAction)}>
-                {card.cta}
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="overlay cards__inner" ref={overlayRef}></div>
+              {c.cta}
+            </button>
+          </div>
+        ))}
       </div>
     </main>
   );

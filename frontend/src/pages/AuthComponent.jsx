@@ -1,82 +1,54 @@
-// src/pages/AuthComponent.jsx
 import React, { useState } from "react";
 
-export default function AuthComponent({ setToken, setUsername, setActiveTab }) {
-  const [isLogin, setIsLogin] = useState(true);
-  const [message, setMessage] = useState("");
-  const [usernameInput, setUsernameInput] = useState("");
-  const [passwordInput, setPasswordInput] = useState("");
+const API = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
 
-  const handleSubmit = async (e) => {
+export default function AuthComponent({ register, onAuth }) {
+  const [usern, setUsern] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [msg, setMsg] = useState("");
+
+  const submit = async (e) => {
     e.preventDefault();
-    setMessage("");
-    const endpoint = isLogin ? "/api/login" : "/api/register";
+    setMsg("");
     try {
-      const res = await fetch(endpoint, {
+      const res = await fetch(`${API}/${register ? "register" : "login"}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: usernameInput,
-          password: passwordInput
-        })
+        body: JSON.stringify({ username: usern, password: pwd })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Authentication failed.");
-      if (isLogin) {
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("username", data.username);
-        setToken(data.access_token);
-        setUsername(data.username);
-        setActiveTab("dashboard");
+      if (!res.ok) throw new Error(data.error || data.msg || "Failed");
+      if (!register) {
+        onAuth({ access_token: data.access_token, username: data.username });
       } else {
-        setMessage("Registration successful! Please log in.");
-        setIsLogin(true);
+        setMsg("Registered! Please login.");
       }
     } catch (err) {
-      setMessage(err.message);
+      setMsg(err.message);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-gray-900 rounded-xl text-white">
-      <h2 className="text-2xl mb-4 font-bold">
-        {isLogin ? "Login to Kronos" : "Register for Kronos"}
-      </h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="max-w-md mx-auto p-6 bg-gray-900 rounded-xl text-white space-y-4">
+      <h2 className="text-2xl font-bold">{register ? "Register" : "Login"}</h2>
+      <form onSubmit={submit} className="space-y-3">
         <input
-          type="text"
-          value={usernameInput}
-          onChange={(e) => setUsernameInput(e.target.value)}
+          type="text" value={usern}
+          onChange={e => setUsern(e.target.value)}
           placeholder="Username"
           className="w-full p-2 bg-gray-800 rounded"
         />
         <input
-          type="password"
-          value={passwordInput}
-          onChange={(e) => setPasswordInput(e.target.value)}
+          type="password" value={pwd}
+          onChange={e => setPwd(e.target.value)}
           placeholder="Password"
           className="w-full p-2 bg-gray-800 rounded"
         />
-        <button
-          type="submit"
-          className="w-full py-2 bg-blue-600 rounded btn-glow"
-        >
-          {isLogin ? "Login" : "Register"}
+        <button className="btn-dynamic w-full py-2" style={{ "--btn-glow": "#00ff6a" }}>
+          {register ? "Register" : "Login"}
         </button>
-        {message && <p className="text-sm text-red-400 mt-2">{message}</p>}
       </form>
-      <p className="mt-4 text-gray-400">
-        {isLogin ? "Don't have an account?" : "Already have an account?"}
-        <button
-          onClick={() => {
-            setIsLogin(!isLogin);
-            setMessage("");
-          }}
-          className="ml-2 text-blue-400 underline"
-        >
-          {isLogin ? "Register" : "Login"}
-        </button>
-      </p>
+      {msg && <div className="text-red-400">{msg}</div>}
     </div>
   );
 }

@@ -82,14 +82,14 @@ def login():
     user = User.query.filter_by(username=usern).first()
     if not user or not check_password_hash(user.password_hash, pwd):
         return jsonify({"error": "Invalid credentials"}), 401
-    token = create_access_token(identity=user.id)
-    return jsonify({"access_token": token, "username": user.username})
+    access_token = create_access_token(identity=str(user.id))
+    return jsonify({"access_token": access_token, "username": user.username})
 
 # --- Social Media Endpoints ---
 @app.route("/api/social/accounts", methods=["GET"])
 @jwt_required()
 def get_social_accounts():
-    uid = get_jwt_identity()
+    uid = int(get_jwt_identity())
     accounts = SocialAccount.query.filter_by(user_id=uid).all()
     return jsonify([{"id": a.id, "platform": a.platform, "handle": a.handle} for a in accounts])
 
@@ -100,7 +100,7 @@ def connect_social_account():
     plat, handle = data.get("platform"), data.get("handle")
     if not plat or not handle:
         return jsonify({"error": "Platform and handle required"}), 400
-    uid = get_jwt_identity()
+    uid = int(get_jwt_identity())
     acc = SocialAccount(platform=plat, handle=handle, user_id=uid)
     db.session.add(acc)
     db.session.commit()
@@ -110,7 +110,6 @@ def connect_social_account():
 @jwt_required()
 def generate_content():
     topic = (request.get_json() or {}).get("topic", "")
-    # Dummy AI logic
     caption = f"🌟 Check out this AI-powered post about {topic}!"
     hashtags = f"#{topic.replace(' ', '')} #AI"
     image_prompt = topic
@@ -120,7 +119,6 @@ def generate_content():
 @jwt_required()
 def generate_image():
     prompt = (request.get_json() or {}).get("prompt", "")
-    # Dummy placeholder image
     image_url = "https://placekitten.com/800/400"
     return jsonify({"image_url": image_url})
 
@@ -133,7 +131,7 @@ def schedule_post():
     account_id = data.get("account_id")
     if not content or not post_time or not account_id:
         return jsonify({"error": "Missing fields"}), 400
-    uid = get_jwt_identity()
+    uid = int(get_jwt_identity())
     dt = datetime.fromisoformat(post_time.replace("Z", ""))
     sp = ScheduledPost(
         content=content,
@@ -151,7 +149,7 @@ def schedule_post():
 @app.route("/api/proposals/platforms", methods=["GET"])
 @jwt_required()
 def get_proposal_platforms():
-    uid = get_jwt_identity()
+    uid = int(get_jwt_identity())
     plats = ProposalPlatform.query.filter_by(user_id=uid).all()
     return jsonify([{"id": p.id, "name": p.name, "profile_url": p.profile_url} for p in plats])
 
@@ -162,15 +160,15 @@ def connect_proposal_platform():
     name, url = data.get("name"), data.get("profile_url")
     if not name or not url:
         return jsonify({"error": "Name and profile_url required"}), 400
-    uid = get_jwt_identity()
+    uid = int(get_jwt_identity())
     p = ProposalPlatform(name=name, profile_url=url, user_id=uid)
-    db.session.add(p); db.session.commit()
+    db.session.add(p)
+    db.session.commit()
     return jsonify({"id": p.id, "name": name, "profile_url": url}), 201
 
 @app.route("/api/proposals/find-jobs", methods=["GET"])
 @jwt_required()
 def find_jobs():
-    # Dummy job data
     jobs = [
         {"id": 1, "title": "Build a React Landing Page", "description": "Need a responsive hero section", "platform_name": "Upwork"},
         {"id": 2, "title": "Social Media Strategy", "description": "Monthly content calendar", "platform_name": "Fiverr"}
